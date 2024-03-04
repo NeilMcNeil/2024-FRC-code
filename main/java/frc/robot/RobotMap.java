@@ -10,4 +10,8 @@ public class RobotMap {
 
     // drive system CAN IDs
     public static final int lifterArmMotor = 7;
+
+    //shooter IDs
+    public static final int leftShooterID = 8;
+    public static final int rightShooterID = 9;
 }
