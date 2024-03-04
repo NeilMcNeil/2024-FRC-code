@@ -8,7 +8,10 @@ import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
@@ -26,11 +29,22 @@ public class Robot extends TimedRobot {
   CANSparkMax backRight = new CANSparkMax(RobotMap.backRightID, MotorType.kBrushless);
   CANSparkMax backLeft = new CANSparkMax(RobotMap.backLeftID, MotorType.kBrushless);
 
+  //Lifter arm motor thing
+  CANSparkMax armLifter = new CANSparkMax(RobotMap.lifterArmMotor, MotorType.kBrushless);
+
+  //shooters
+  CANSparkMax leftShooter = new CANSparkMax(RobotMap.leftShooterID, MotorType.kBrushless);
+  CANSparkMax rightShooter = new CANSparkMax(RobotMap.rightShooterID, MotorType.kBrushless);
+
+  // compressor
+  //private final Compressor m_compressor = new Compressor(PneumaticsModuleType.CTREPCM);
+
+
   //private final PWMSparkMax m_leftDrive = new PWMSparkMax(0);
   //private final PWMSparkMax m_rightDrive = new PWMSparkMax(1);
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(frontLeft, frontRight);
-  private final XboxController m_xboxController = new XboxController(0);
-  private final Joystick m_joystick = new Joystick(1);
+  private final XboxController opperatorJoystick = new XboxController(1);
+  private final Joystick m_joystick = new Joystick(0);
   private final Timer m_timer = new Timer();
 
   public Robot() {
@@ -62,6 +76,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
+
     // Drive for 2 seconds
     if (m_timer.get() < 2.0) {
       // Drive forwards half speed, make sure to turn input squaring off
@@ -78,7 +93,23 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during teleoperated mode. */
   @Override
   public void teleopPeriodic() {
+    //make robot move
     m_robotDrive.arcadeDrive(-m_joystick.getY(), -m_joystick.getX());
+
+    if(m_joystick.getRawButtonPressed(0)){
+      System.out.println("button pressed");
+      leftShooter.set(0.5);
+      rightShooter.set(-0.5);
+    }
+
+    // Make arm rise
+    if (opperatorJoystick.getXButtonPressed()){
+      System.out.println("x buttom pressed");
+      armLifter.set(0.1);
+    } else if (opperatorJoystick.getYButtonPressed()){
+      System.out.println("y buttom pressed");
+      armLifter.set(-0.1);
+    }
   }
 
   /** This function is called once each time the robot enters test mode. */
