@@ -9,10 +9,15 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.PneumaticsControlModule;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+
+
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 
@@ -22,28 +27,35 @@ import com.revrobotics.CANSparkMax;
  * the package after creating this project, you must also update the manifest file in the resource
  * directory.
  */
+
 public class Robot extends TimedRobot {
+
   //driving motors
   CANSparkMax frontRight = new CANSparkMax(RobotMap.frontRightID, MotorType.kBrushless);
   CANSparkMax frontLeft = new CANSparkMax(RobotMap.frontLeftID, MotorType.kBrushless);
   CANSparkMax backRight = new CANSparkMax(RobotMap.backRightID, MotorType.kBrushless);
   CANSparkMax backLeft = new CANSparkMax(RobotMap.backLeftID, MotorType.kBrushless);
 
-  //Lifter arm motor thing
+  // //Lifter arm motor thing
   CANSparkMax armLifter = new CANSparkMax(RobotMap.lifterArmMotor, MotorType.kBrushless);
 
-  //shooters
-  CANSparkMax leftShooter = new CANSparkMax(RobotMap.leftShooterID, MotorType.kBrushless);
-  CANSparkMax rightShooter = new CANSparkMax(RobotMap.rightShooterID, MotorType.kBrushless);
+  //intake motor
+  PWMSparkMax bottomIntake = new PWMSparkMax(RobotMap.bottomIntakeMotorId);
+  CANSparkMax topIntake = new CANSparkMax(RobotMap.topIntakeMotorId, MotorType.kBrushless);
 
-  // compressor
-  //private final Compressor m_compressor = new Compressor(PneumaticsModuleType.CTREPCM);
+  boolean isShooting = false;
+  double speed = RobotMap.fastSpeed;
+
+  //PneumaticsControlModule pcm = new PneumaticsControlModule(0);
+  Compressor compressor = new Compressor(0, PneumaticsModuleType.CTREPCM);
+  DoubleSolenoid solenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 7);
 
 
-  //private final PWMSparkMax m_leftDrive = new PWMSparkMax(0);
-  //private final PWMSparkMax m_rightDrive = new PWMSparkMax(1);
+   CANSparkMax leftShooter = new CANSparkMax(RobotMap.leftShooterID, MotorType.kBrushless);
+   CANSparkMax rightShooter = new CANSparkMax(RobotMap.rightShooterID, MotorType.kBrushless);
+
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(frontLeft, frontRight);
-  private final XboxController opperatorJoystick = new XboxController(1);
+  private final GenericHID opperatorJoystick = new GenericHID(1);
   private final Joystick m_joystick = new Joystick(0);
   private final Timer m_timer = new Timer();
 
@@ -81,8 +93,10 @@ public class Robot extends TimedRobot {
     if (m_timer.get() < 2.0) {
       // Drive forwards half speed, make sure to turn input squaring off
       m_robotDrive.arcadeDrive(0.5, 0.0, false);
-    } else {
-      m_robotDrive.stopMotor(); // stop robot
+    } 
+    else if (m_timer.get() < 2.5) {
+      m_robotDrive.stopMotor();
+      armLifter.set(-0.25);
     }
   }
 
@@ -94,29 +108,93 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     //make robot move
-    m_robotDrive.arcadeDrive(-m_joystick.getY(), -m_joystick.getX());
+    m_robotDrive.arcadeDrive(-m_joystick.getY()*speed, -m_joystick.getX()*speed);
 
-    if(m_joystick.getRawButtonPressed(0)){
-      System.out.println("button pressed");
-      leftShooter.set(0.5);
-      rightShooter.set(-0.5);
+    // make arm move
+    if (opperatorJoystick.getRawButton(RobotMap.y)) {
+      System.out.println("y");
+      armLifter.set(0.5);
+    }
+    else if (opperatorJoystick.getRawButton(RobotMap.a)) {
+      System.out.println("a");
+      armLifter.set(-0.5);
+    }
+    else {
+      armLifter.stopMotor();
     }
 
-    // Make arm rise
-    if (opperatorJoystick.getXButtonPressed()){
-      System.out.println("x buttom pressed");
-      armLifter.set(0.1);
-    } else if (opperatorJoystick.getYButtonPressed()){
-      System.out.println("y buttom pressed");
-      armLifter.set(-0.1);
+
+    // change speed if a button is pressed
+    if(m_joystick.getRawButtonPressed(RobotMap.speedShiftButton)){
+      if (speed == RobotMap.fastSpeed){
+        System.out.println("Slow Speed");
+        speed = RobotMap.slowSpeed;
+      }
+      else if (speed == RobotMap.slowSpeed){
+        System.out.println("Fast Speed");
+        speed = RobotMap.fastSpeed;
+      }
+    }
+
+    if(m_joystick.getRawButtonPressed(RobotMap.trigger)){
+      if (isShooting == true){
+        leftShooter.stopMotor();
+        rightShooter.stopMotor();
+        isShooting = false;
+      }
+      else {
+        leftShooter.set(RobotMap.shootSpeed);
+        rightShooter.set(-RobotMap.shootSpeed);
+        isShooting = true;
+      }
+      System.out.println("trigger pressed");
+    }
+    else if(opperatorJoystick.getRawButton(RobotMap.back)){
+      leftShooter.set(RobotMap.shooterIntakeSpeed);
+      rightShooter.set(-RobotMap.shooterIntakeSpeed);
+    }
+    else if (isShooting == false) {
+      leftShooter.stopMotor();
+      rightShooter.stopMotor();
+    }
+
+
+    // lift that lifter
+    if(m_joystick.getRawButtonPressed(RobotMap.liftUpID)){
+      System.out.println("up");
+      solenoid.set(DoubleSolenoid.Value.kForward);
+    }
+    else if(m_joystick.getRawButtonPressed(RobotMap.liftDownID)){
+      System.out.println("down");
+      solenoid.set(DoubleSolenoid.Value.kReverse);
+    }
+    
+    // succ and shoot
+    if (opperatorJoystick.getRawButton(RobotMap.lt)){
+      System.out.println("lt");
+      bottomIntake.set(RobotMap.intakeSpeed);
+      topIntake.set(-RobotMap.intakeSpeed);
+    }
+    else if (opperatorJoystick.getRawButton(RobotMap.rt)){
+      System.out.println("rt");
+      bottomIntake.set(-RobotMap.intakeSpeed);
+      topIntake.set(RobotMap.intakeSpeed);
+    }
+    else {
+      bottomIntake.stopMotor();
+      topIntake.stopMotor();
     }
   }
 
   /** This function is called once each time the robot enters test mode. */
   @Override
-  public void testInit() {}
+  public void testInit() {
+
+  }
 
   /** This function is called periodically during test mode. */
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+    
+  }
 }
