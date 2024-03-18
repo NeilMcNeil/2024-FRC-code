@@ -21,7 +21,7 @@ public class RobotMap {
 
     // lifter motor, pneumatics stuff
     public static final int liftUpID = 12;
-    public static final int liftDownID = 13;
+    public static final int liftDownID = 11;
 
     // operator joystick mapping
     public static final int x = 1;
@@ -40,8 +40,9 @@ public class RobotMap {
 
     // this is a place for constants
     public static final double fastSpeed = 1;
-    public static final double slowSpeed = 0.25;
-    public static final double intakeSpeed = 0.25;
-    public static final double shootSpeed = 0.75;
-    public static final double shooterIntakeSpeed = -0.25;
+    public static final double slowSpeed = 0.40;
+    public static final double intakeSpeed = 0.5;
+    public static final double armShootSpeed = 1;
+    public static final double shootSpeed = -1;
+    public static final double shooterIntakeSpeed = 0.25;
 }
