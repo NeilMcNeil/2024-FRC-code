@@ -47,12 +47,14 @@ public class Robot extends TimedRobot {
   double speed = RobotMap.fastSpeed;
 
   //PneumaticsControlModule pcm = new PneumaticsControlModule(0);
-  Compressor compressor = new Compressor(0, PneumaticsModuleType.CTREPCM);
-  DoubleSolenoid solenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 7);
+  // Compressor compressor = new Compressor(0, PneumaticsModuleType.CTREPCM);
+  DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 7);
+  DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1, 6);
 
 
-   CANSparkMax leftShooter = new CANSparkMax(RobotMap.leftShooterID, MotorType.kBrushless);
-   CANSparkMax rightShooter = new CANSparkMax(RobotMap.rightShooterID, MotorType.kBrushless);
+
+  CANSparkMax leftShooter = new CANSparkMax(RobotMap.leftShooterID, MotorType.kBrushless);
+  CANSparkMax rightShooter = new CANSparkMax(RobotMap.rightShooterID, MotorType.kBrushless);
 
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(frontLeft, frontRight);
   private final GenericHID opperatorJoystick = new GenericHID(1);
@@ -88,21 +90,20 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-
-    // Drive for 2 seconds
-    if (m_timer.get() < 2.0) {
-      // Drive forwards half speed, make sure to turn input squaring off
-      m_robotDrive.arcadeDrive(0.5, 0.0, false);
-    } 
-    else if (m_timer.get() < 2.5) {
-      m_robotDrive.stopMotor();
-      armLifter.set(-0.25);
-    }
+    //autoAmpshot(true);
+    forwardAuto();
+    // else if (m_timer.get() < 2.5) {
+    //   m_robotDrive.stopMotor();
+    //   armLifter.set(-0.25);
+    // }
   }
 
   /** This function is called once each time the robot enters teleoperated mode. */
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    leftShooter.stopMotor();
+    rightShooter.stopMotor();
+  }
 
   /** This function is called periodically during teleoperated mode. */
   @Override
@@ -136,8 +137,11 @@ public class Robot extends TimedRobot {
       }
     }
 
+    // shoot
     if(m_joystick.getRawButtonPressed(RobotMap.trigger)){
+      System.out.println("trigger pressed");
       if (isShooting == true){
+        System.out.println("stop shooting");
         leftShooter.stopMotor();
         rightShooter.stopMotor();
         isShooting = false;
@@ -146,10 +150,11 @@ public class Robot extends TimedRobot {
         leftShooter.set(RobotMap.shootSpeed);
         rightShooter.set(-RobotMap.shootSpeed);
         isShooting = true;
+        System.out.println("start shooting");
+
       }
-      System.out.println("trigger pressed");
     }
-    else if(opperatorJoystick.getRawButton(RobotMap.back)){
+    else if(opperatorJoystick.getRawButton(RobotMap.back) && isShooting == false){
       leftShooter.set(RobotMap.shooterIntakeSpeed);
       rightShooter.set(-RobotMap.shooterIntakeSpeed);
     }
@@ -162,21 +167,23 @@ public class Robot extends TimedRobot {
     // lift that lifter
     if(m_joystick.getRawButtonPressed(RobotMap.liftUpID)){
       System.out.println("up");
-      solenoid.set(DoubleSolenoid.Value.kForward);
+      leftSolenoid.set(DoubleSolenoid.Value.kForward);
+      rightSolenoid.set(DoubleSolenoid.Value.kForward);
     }
     else if(m_joystick.getRawButtonPressed(RobotMap.liftDownID)){
       System.out.println("down");
-      solenoid.set(DoubleSolenoid.Value.kReverse);
+      leftSolenoid.set(DoubleSolenoid.Value.kReverse);
+      rightSolenoid.set(DoubleSolenoid.Value.kReverse);
     }
     
     // succ and shoot
-    if (opperatorJoystick.getRawButton(RobotMap.lt)){
-      System.out.println("lt");
-      bottomIntake.set(RobotMap.intakeSpeed);
-      topIntake.set(-RobotMap.intakeSpeed);
-    }
-    else if (opperatorJoystick.getRawButton(RobotMap.rt)){
+    if (opperatorJoystick.getRawButton(RobotMap.rt)){
       System.out.println("rt");
+      bottomIntake.set(RobotMap.armShootSpeed);
+      topIntake.set(-RobotMap.armShootSpeed);
+    }
+    else if (opperatorJoystick.getRawButton(RobotMap.lt)){
+      System.out.println("lt");
       bottomIntake.set(-RobotMap.intakeSpeed);
       topIntake.set(RobotMap.intakeSpeed);
     }
@@ -188,13 +195,38 @@ public class Robot extends TimedRobot {
 
   /** This function is called once each time the robot enters test mode. */
   @Override
-  public void testInit() {
-
-  }
+  public void testInit() {}
 
   /** This function is called periodically during test mode. */
   @Override
-  public void testPeriodic() {
-    
+  public void testPeriodic() {}
+
+  public void autoAmpshot(boolean red) {
+    leftShooter.set(-0.70);
+    rightShooter.set(0.70);
+    float m = 1;
+    if (red){
+      m = -1;
+    }
+    // turn
+    if (m_timer.get() < 0.2) {
+      // turn
+      m_robotDrive.arcadeDrive(0, -0.5*m, false);
+    } 
+    else if (m_timer.get() < 1.4) {
+      // send it
+      m_robotDrive.arcadeDrive(0.5, 0.0, false);
+    } 
+    else {
+      leftShooter.stopMotor();
+      rightShooter.stopMotor();
+    }
+  }
+
+  public void forwardAuto() {
+    if (m_timer.get() < 1.4) {
+      // send it
+      m_robotDrive.arcadeDrive(0.5, 0.0, false);
+    } 
   }
 }
