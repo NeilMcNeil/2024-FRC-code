@@ -10,6 +10,8 @@ public class RobotMap {
 
     // drive system CAN IDs
     public static final int lifterArmMotor = 7;
+    public static final double ARM_UP_ENCODER_COUNT = -1;
+    public static final double ARM_DOWN_ENCODER_COUNT = -35.5;
 
     //shooter IDs
     public static final int leftShooterID = 1;
@@ -29,6 +31,8 @@ public class RobotMap {
     public static final int b = 3;
     public static final int y = 4;
 
+    public static final int lb = 5;
+    public static final int rb = 6;
     public static final int lt = 7;
     public static final int rt = 8;
     public static final int back = 9;
@@ -41,8 +45,10 @@ public class RobotMap {
     // this is a place for constants
     public static final double fastSpeed = 1;
     public static final double slowSpeed = 0.40;
-    public static final double intakeSpeed = 0.5;
+    public static final double intakeSpeed = 0.3;
+    public static final double nudgeSpeed = 0.1;
     public static final double armShootSpeed = 1;
     public static final double shootSpeed = -1;
     public static final double shooterIntakeSpeed = 0.25;
+    public static final double liftArmSpeed = 0.2;
 }
